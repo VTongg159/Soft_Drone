@@ -50,7 +50,7 @@ class KeyboardController:
             return any(k in self.pressed_keys for k in keys)
 
     def get_target_delta_world(self):
-        """Trả về (dx, dy, dz) trong World Frame."""
+        
         dx, dy, dz = 0.0, 0.0, 0.0
 
         if self._is_pressed(keyboard.KeyCode.from_char('i'), keyboard.Key.up):
