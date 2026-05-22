@@ -29,10 +29,12 @@ class KeyboardController:
 
     def start(self):
         self._listener.start()
+        print("=== Skydio X2 Indoor Controller ===")
         print("  i / k  or ↑ / ↓  : forward / backward (World Y)")
         print("  j / l  or ← / →  : left / right (World X)")
         print("  u / o : up / down (World Z)")
         print("  ESC : exit")
+        print("  [Start pos: Living room center (3, 5, 1.0)]")
 
     def stop(self):
         self._listener.stop()
@@ -225,7 +227,7 @@ class dummySensor:
 class drone:
     def __init__(self, target=np.array((0, 0, 0))):
         self.m = mujoco.MjModel.from_xml_path(
-            '/home/admin1/soft_drone_ws/MuJoCo/mujoco_menagerie-main/skydio_x2/scene.xml')
+            '/home/admin1/soft_drone_ws/indoor/indoor_env.xml')
         self.d = mujoco.MjData(self.m)
 
         self.planner = dummyPlanner(target=target)
@@ -241,6 +243,18 @@ class drone:
         self.pid_v_x = PID(0.1, 0.003, 0.02, setpoint=0, output_limits=(-0.5, 0.5))
         self.pid_v_y = PID(0.1, 0.003, 0.02, setpoint=0, output_limits=(-0.5, 0.5))
         self.current_yaw = 0.0
+
+    def reset_pose(self, x, y, z):
+        """Đặt vị trí ban đầu của drone (freejoint: qpos[0:7] = [x,y,z, qw,qx,qy,qz])."""
+        self.d.qpos[0] = x
+        self.d.qpos[1] = y
+        self.d.qpos[2] = z
+        self.d.qpos[3] = 1.0   # quaternion w (no rotation)
+        self.d.qpos[4] = 0.0
+        self.d.qpos[5] = 0.0
+        self.d.qpos[6] = 0.0
+        self.d.qvel[:] = 0.0
+        mujoco.mj_forward(self.m, self.d)
 
     def update_outer_control(self):
         pos      = self.sensor.get_position()
@@ -305,19 +319,22 @@ class drone:
 
 # MAIN
 
-my_drone = drone(target=np.array((0.0, 0.0, 1.0)))
+# Spawn drone at living room center, 1 m above floor
+my_drone = drone(target=np.array((3.0, 5.0, 1.0)))
 kb = KeyboardController(step_size=0.3, alt_step=0.3)
 kb.start()
 
-current_target = np.array([0.0, 0.0, 1.0])
+current_target = np.array([3.0, 5.0, 1.0])
 KEYBOARD_UPDATE_INTERVAL = 30
 
 with mujoco.viewer.launch_passive(my_drone.m, my_drone.d) as viewer:
+    # Teleport drone to living room center before simulation starts
+    my_drone.reset_pose(3.0, 5.0, 1.0)
     time.sleep(5)
     start = time.time()
     step  = 1
 
-    while viewer.is_running() and time.time() - start < 120:
+    while viewer.is_running() and time.time() - start < 300:
         step_start = time.time()
 
         # Update target from keyboard (World Frame)

@@ -1,0 +1,151 @@
+<mujoco model="Clean Soft Drone">
+  <compiler angle="radian"/>
+  <option timestep="0.002" gravity="0 0 -9.81"/>
+
+  <default>
+    <geom friction="0.5 0.1 0.01" solref="0.02 1"/>
+    <!-- Motor sliders: underdamped + limited range to prevent unbounded drift -->
+    <default class="motor_mount">
+      <joint type="slide" damping="0.2" stiffness="0"
+             limited="true" range="-0.35 0.35"/>
+    </default>
+  </default>
+
+  <asset>
+    <texture name="grid" type="2d" builtin="checker"
+             rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3"
+             width="512" height="512" mark="edge"/>
+    <material name="gridmat" texture="grid" texuniform="true"
+              texrepeat="5 5" reflectance="0.2"/>
+    <material name="wood" rgba="0.6 0.4 0.2 1"/>
+  </asset>
+
+  <worldbody>
+    <light name="light" pos="0 0 3"/>
+
+    <!-- Floor -->
+    <geom name="floor" type="plane" size="0 0 0.05" material="gridmat"/>
+
+    <!-- body starts at z=0.5 m → mj_resetData sets qpos0 to this reference pose -->
+    <body name="x2" pos="0 0 0.5">
+      <!-- NAMED freejoint so Python can look it up with mj_name2id -->
+      <freejoint name="drone_freejoint"/>
+
+      <!-- Central hub: 20×20×4 cm box, 300 g -->
+      <geom type="box" size="0.1 0.1 0.02" rgba="0.2 0.2 0.2 1"
+            mass="0.3" friction="0.05 0.005 0.001" solref="0.02 0.2"/>
+      <site name="imu" pos="0 0 0"/>
+
+      <!-- Arm FL (+X +Y, 45°) -->
+      <flexcomp name="arm_fl" type="grid" dim="1"
+                count="5 1 1" spacing="0.03 0.03 0.03"
+                radius="0.008" mass="0.05" rgba="0.8 0.1 0.1 1"
+                pos="0.1 0.1 0" euler="0 0 0.785398">
+        <pin id="0"/>
+        <edge equality="true" stiffness="500" damping="2" solref="0.02 0.5"/>
+        <contact selfcollide="none" condim="1"/>
+      </flexcomp>
+
+      <!-- Arm FR (+X -Y, -45°) -->
+      <flexcomp name="arm_fr" type="grid" dim="1"
+                count="5 1 1" spacing="0.03 0.03 0.03"
+                radius="0.008" mass="0.05" rgba="0.8 0.1 0.1 1"
+                pos="0.1 -0.1 0" euler="0 0 -0.785398">
+        <pin id="0"/>
+        <edge equality="true" stiffness="500" damping="2" solref="0.02 0.5"/>
+        <contact selfcollide="none" condim="1"/>
+      </flexcomp>
+
+      <!-- Arm RL (-X +Y, 135°) -->
+      <flexcomp name="arm_rl" type="grid" dim="1"
+                count="5 1 1" spacing="0.03 0.03 0.03"
+                radius="0.008" mass="0.05" rgba="0.1 0.1 0.8 1"
+                pos="-0.1 0.1 0" euler="0 0 2.356194">
+        <pin id="0"/>
+        <edge equality="true" stiffness="500" damping="2" solref="0.02 0.5"/>
+        <contact selfcollide="none" condim="1"/>
+      </flexcomp>
+
+      <!-- Arm RR (-X -Y, -135°) -->
+      <flexcomp name="arm_rr" type="grid" dim="1"
+                count="5 1 1" spacing="0.03 0.03 0.03"
+                radius="0.008" mass="0.05" rgba="0.1 0.1 0.8 1"
+                pos="-0.1 -0.1 0" euler="0 0 -2.356194">
+        <pin id="0"/>
+        <edge equality="true" stiffness="500" damping="2" solref="0.02 0.5"/>
+        <contact selfcollide="none" condim="1"/>
+      </flexcomp>
+
+
+      <!-- Motor 3: Front-Left  (+x +y) -->
+      <body name="motor3" pos="0.185 0.185 0">
+        <joint class="motor_mount" axis="1 0 0"/>
+        <joint class="motor_mount" axis="0 1 0"/>
+        <joint class="motor_mount" axis="0 0 1"/>
+        <geom type="cylinder" size="0.08 0.004"
+              rgba="0.3 0.3 0.3 0.6" mass="0.05"
+              friction="0.05 0.005 0.001" solref="0.02 0.2"/>
+        <site name="thrust3" pos="0 0 0"/>
+      </body>
+
+      <!-- Motor 4: Front-Right (+x -y) -->
+      <body name="motor4" pos="0.185 -0.185 0">
+        <joint class="motor_mount" axis="1 0 0"/>
+        <joint class="motor_mount" axis="0 1 0"/>
+        <joint class="motor_mount" axis="0 0 1"/>
+        <geom type="cylinder" size="0.08 0.004"
+              rgba="0.3 0.3 0.3 0.6" mass="0.05"
+              friction="0.05 0.005 0.001" solref="0.02 0.2"/>
+        <site name="thrust4" pos="0 0 0"/>
+      </body>
+
+      <!-- Motor 2: Rear-Left  (-x +y) -->
+      <body name="motor2" pos="-0.185 0.185 0">
+        <joint class="motor_mount" axis="1 0 0"/>
+        <joint class="motor_mount" axis="0 1 0"/>
+        <joint class="motor_mount" axis="0 0 1"/>
+        <geom type="cylinder" size="0.08 0.004"
+              rgba="0.3 0.3 0.3 0.6" mass="0.05"
+              friction="0.05 0.005 0.001" solref="0.02 0.2"/>
+        <site name="thrust2" pos="0 0 0"/>
+      </body>
+
+      <!-- Motor 1: Rear-Right (-x -y) -->
+      <body name="motor1" pos="-0.185 -0.185 0">
+        <joint class="motor_mount" axis="1 0 0"/>
+        <joint class="motor_mount" axis="0 1 0"/>
+        <joint class="motor_mount" axis="0 0 1"/>
+        <geom type="cylinder" size="0.08 0.004"
+              rgba="0.3 0.3 0.3 0.6" mass="0.05"
+              friction="0.05 0.005 0.001" solref="0.02 0.2"/>
+        <site name="thrust1" pos="0 0 0"/>
+      </body>
+
+    </body> <!-- /x2 -->
+
+    <!-- Wooden Collision Wall -->
+    <body name="wall" pos="1.5 0 0.5">
+      <geom type="box" size="0.1 1.0 0.5" material="wood"
+            mass="50" friction="0.05 0.005 0.001"
+            solref="0.02 0.2" solimp="0.95 0.99 0.001"/>
+    </body>
+
+  </worldbody>
+
+  <!-- arm_XX_4 = tip vertex body created by flexcomp (vertex index 4) -->
+  <equality>
+    <connect body1="arm_rr_4" body2="motor1" anchor="0 0 0" solref="0.01 1"/>
+    <connect body1="arm_rl_4" body2="motor2" anchor="0 0 0" solref="0.01 1"/>
+    <connect body1="arm_fl_4" body2="motor3" anchor="0 0 0" solref="0.01 1"/>
+    <connect body1="arm_fr_4" body2="motor4" anchor="0 0 0" solref="0.01 1"/>
+  </equality>
+
+  <!-- Actuator order matches ctrl[:4] assignment in test_collision.py       -->
+  <actuator>
+    <general name="thrust1" site="thrust1" gear="0 0 1 0 0  0.0201"/>
+    <general name="thrust2" site="thrust2" gear="0 0 1 0 0 -0.0201"/>
+    <general name="thrust3" site="thrust3" gear="0 0 1 0 0  0.0201"/>
+    <general name="thrust4" site="thrust4" gear="0 0 1 0 0 -0.0201"/>
+  </actuator>
+
+</mujoco>
