@@ -12,10 +12,6 @@ from pynput import keyboard
 
 
 class KeyboardController:
-    """
-    Thread-safe keyboard handler dùng pynput.
-    Không xung đột với MuJoCo viewer vì chạy trên thread riêng.
-    """
     def __init__(self, step_size=0.3, alt_step=0.3):
         self.pressed_keys = set()
         self.lock = threading.Lock()
