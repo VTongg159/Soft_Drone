@@ -1,11 +1,11 @@
 
 <mujoco model="indoor_drone_navigation">
   <!-- include Skydio X2 drone model -->
-  <include file="../MuJoCo/mujoco_menagerie-main/skydio_x2/x2.xml"/>
+  <include file="../X2_drone/mujoco_menagerie-main/skydio_x2/x2.xml"/>
 
   <!-- house environment -->
   <compiler angle="radian" autolimits="true"
-            assetdir="../MuJoCo/mujoco_menagerie-main/skydio_x2/assets"/>
+            assetdir="../X2_drone/mujoco_menagerie-main/skydio_x2/assets"/>
   <option timestep="0.01"
           gravity="0 0 -9.81"
           density="1.225"
